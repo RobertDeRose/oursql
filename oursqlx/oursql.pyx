@@ -6,7 +6,7 @@ features like parameterization!
 """
 
 __author__ = 'Aaron Gallagher <habnabit@gmail.com>'
-__version__ = '0.9.4'
+__version__ = '0.9.5'
 
 include "oursql.pxi"
 include "nogil.pyx"

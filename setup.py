@@ -22,26 +22,26 @@ class MysqlExtension(Extension):
         self._mysql_link_args = []
         self.get_mysql_compile_args = self.get_mysql_link_args = None
         Extension.__init__(self, *a, **kw)
-    
+
     def _get_extra_compile_args(self):
         if not self._mysql_compile_args and self.get_mysql_compile_args:
             self._mysql_compile_args = self.get_mysql_compile_args()
         return self._extra_compile_args + self._mysql_compile_args
-    
+
     def _set_extra_compile_args(self, args):
         self._extra_compile_args = args
-    
+
     extra_compile_args = property(
         _get_extra_compile_args, _set_extra_compile_args)
-    
+
     def _get_extra_link_args(self):
         if not self._mysql_link_args and self.get_mysql_link_args:
             self._mysql_link_args = self.get_mysql_link_args()
         return self._extra_link_args + self._mysql_link_args
-    
+
     def _set_extra_link_args(self, args):
         self._extra_link_args = args
-    
+
     extra_link_args = property(_get_extra_link_args, _set_extra_link_args)
 
 oursql_ext = MysqlExtension("oursql", ["oursqlx/compat.c"])
@@ -58,7 +58,7 @@ oursql_commands = {}
 
 class oursql_build_ext(build_ext):
     user_options = build_ext.user_options + [
-        ('mysql-config=', None, 
+        ('mysql-config=', None,
             '(*nix only) path to the mysql-config executable'),
         ('use-libmysqld', None,
             '(*nix only) link against libmysqld instead of libmysqlclient'),
@@ -71,18 +71,18 @@ class oursql_build_ext(build_ext):
             '(Windows only) the path to the mysql installation; can be given '
             'instead of --mysql-registry-key'),
     ]
-    
+
     boolean_options = build_ext.boolean_options + [
         'use-libmysqld', 'static'
     ]
-    
+
     def initialize_options(self):
         build_ext.initialize_options(self)
         self.mysql_config = os.environ.get('MYSQL_CONFIG', 'mysql_config')
         self.use_libmysqld = self.static = 0
         self.mysql_registry_key = r'SOFTWARE\MySQL AB\MySQL Server 5.0'
         self.mysql_root = None
-    
+
     def get_mysql_config(self, option):
         args = [self.mysql_config, '--%s' % option]
         print(' '.join(args))
@@ -93,7 +93,7 @@ class oursql_build_ext(build_ext):
             raise
         stdout, _ = proc.communicate()
         return split_quoted(stdout.strip().decode())
-    
+
     def setup_posixish(self, ext):
         ext.get_mysql_compile_args = (
             lambda: self.get_mysql_config('cflags'))
@@ -103,7 +103,7 @@ class oursql_build_ext(build_ext):
         else:
             ext.get_mysql_link_args = (
                 lambda: self.get_mysql_config('libs'))
-    
+
     def setup_windowsish(self, ext):
         if self.mysql_root:
             mysql_root = self.mysql_root
@@ -111,7 +111,7 @@ class oursql_build_ext(build_ext):
             mysql_key = winreg.OpenKey(
                 winreg.HKEY_LOCAL_MACHINE, self.mysql_registry_key)
             mysql_root, _ = winreg.QueryValueEx(mysql_key, 'Location')
-        
+
         if self.static:
             client = "mysqlclient"
         else:
@@ -128,13 +128,13 @@ class oursql_build_ext(build_ext):
             else:
                 ext.get_mysql_compile_args = lambda: ['/MD']
 
-    
+
     def build_extension(self, ext):
         if getattr(ext, 'use_mysql_flags', False):
             try:
                 # distribute/setuptools flip out if I try to open(os.devnull),
                 # so, I work around their stupidity by using a pipe instead.
-                proc = subprocess.Popen([self.mysql_config], 
+                proc = subprocess.Popen([self.mysql_config],
                     stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             except OSError:
                 if winreg:
@@ -169,19 +169,19 @@ class ZipWithLicense(Command):
     description = 'zip binary installer with the license'
     user_options = []
     boolean_options = []
-    
+
     def initialize_options(self):
         pass
-    
+
     def finalize_options(self):
         pass
-    
+
     def run(self):
         license = open(os.path.join(
             os.path.dirname(os.path.abspath(__file__)), 'COPYING')).read()
         license = '\r\n'.join(license.splitlines())
         fullname = self.distribution.get_fullname()
-        
+
         dist_files = getattr(self.distribution, 'dist_files', None)
         if dist_files is None:
             dist_files = []
@@ -189,7 +189,7 @@ class ZipWithLicense(Command):
                 if command.startswith('bdist_'):
                     dist_files.append(
                         (None, None, cmd_obj.get_installer_filename(fullname)))
-        
+
         new_dist_files = []
         for command, pyversion, filename in dist_files:
             out_filename = os.path.splitext(filename)[0] + '.zip'
@@ -204,19 +204,19 @@ oursql_commands['zipwithlicense'] = ZipWithLicense
 
 setup(
     name='oursql',
-    version='0.9.4',
+    version='0.9.5',
     author='Aaron Gallagher',
     author_email='habnabit@gmail.com',
     url='http://launchpad.net/oursql',
     description='MySQL bindings for python.',
     long_description="""
-        oursql is a set of MySQL bindings for python 2.4+ with a focus on 
-        wrapping the `MYSQL_STMT API`__ to provide real parameterization and 
+        oursql is a set of MySQL bindings for python 2.4+ with a focus on
+        wrapping the `MYSQL_STMT API`__ to provide real parameterization and
         real server-side cursors. MySQL 4.1.2 or better is required.
-        
+
         __ http://dev.mysql.com/doc/refman/5.0/en/c-api-prepared-statements.html
-        
-        There's extensive documentation available online at 
+
+        There's extensive documentation available online at
         http://packages.python.org/oursql/.
     """,
     classifiers=[
@@ -228,7 +228,7 @@ setup(
         'Programming Language :: Python :: 3',
         'Topic :: Database :: Database Engines/Servers',
     ],
-    
+
     ext_modules=[oursql_ext],
     cmdclass=oursql_commands,
 )
